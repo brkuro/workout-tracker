@@ -1,0 +1,180 @@
+<div class="max-w-3xl mx-auto p-4 pb-28">
+  
+  <!-- TELA 1: Escolha qual ficha treinar hoje -->
+  @if (!selectedTemplate()) {
+    <div class="space-y-4">
+      <div class="mb-6">
+        <h2 class="text-2xl font-bold text-slate-100">Iniciar Treino</h2>
+        <p class="text-sm text-slate-400">Escolha uma das suas fichas para registrar as cargas de hoje.</p>
+      </div>
+
+      @for (tpl of state.templates(); track tpl.id) {
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex items-center justify-between hover:border-emerald-500/40 transition">
+          <div>
+            <h3 class="text-lg font-bold text-slate-100">{{ tpl.name }}</h3>
+            <p class="text-xs text-slate-400 mt-0.5">
+              {{ tpl.exercises.length }} exercícios •
+              {{ tpl.exercises.map(e => e.muscleGroup).join(', ') }}
+            </p>
+          </div>
+          <button
+            (click)="startWorkout(tpl)"
+            class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-5 py-2.5 rounded-xl text-sm transition shadow-lg shadow-emerald-500/10"
+          >
+            Começar
+          </button>
+        </div>
+      } @empty {
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-8 text-center">
+          <p class="text-slate-400 text-sm mb-4">Você ainda não criou nenhuma ficha de treino.</p>
+          <a routerLink="/fichas" class="inline-block bg-emerald-600 text-white text-sm font-semibold px-4 py-2 rounded-lg">
+            Montar primeira ficha
+          </a>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- TELA 2: Execução do Treino Ativo -->
+  @if (selectedTemplate(); as workout) {
+    <div class="space-y-6">
+      <!-- Cabeçalho do Treino -->
+      <div class="flex items-center justify-between bg-slate-900 border border-slate-800 rounded-2xl p-4">
+        <div>
+          <span class="text-xs font-semibold uppercase tracking-wider text-emerald-400">Em andamento</span>
+          <h2 class="text-xl font-bold text-slate-100">{{ workout.name }}</h2>
+        </div>
+        <div class="flex gap-2">
+          <button
+            (click)="cancelWorkout()"
+            class="text-xs text-slate-400 hover:text-rose-400 px-3 py-2 rounded-lg transition"
+          >
+            Cancelar
+          </button>
+          <button
+            (click)="finishWorkout()"
+            class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-4 py-2 rounded-xl text-sm transition"
+          >
+            Finalizar Treino
+          </button>
+        </div>
+      </div>
+
+      <!-- Cards de cada Exercício -->
+      @for (ex of activeExercises(); track ex.exerciseId) {
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-md">
+          <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+            <div>
+              <span class="text-xs font-semibold text-emerald-400 uppercase">{{ ex.muscleGroup }}</span>
+              <h3 class="text-lg font-bold text-slate-100">{{ ex.name }}</h3>
+            </div>
+            <div class="flex items-center gap-2">
+              @if (ex.lastSessionHint) {
+                <span class="text-xs bg-slate-800 text-amber-300 border border-amber-500/20 px-2.5 py-1 rounded-full">
+                  Último: {{ ex.lastSessionHint }}
+                </span>
+              }
+              <span class="text-xs bg-slate-950 text-slate-400 px-2.5 py-1 rounded-full border border-slate-800">
+                Alvo: {{ ex.targetReps }} reps
+              </span>
+            </div>
+          </div>
+
+          <!-- Tabela de Séries -->
+          <div class="space-y-2">
+            <div class="grid grid-cols-12 text-xs font-semibold text-slate-500 px-2 pb-1 text-center">
+              <div class="col-span-2">SÉRIE</div>
+              <div class="col-span-4">CARGA (KG)</div>
+              <div class="col-span-4">REPS</div>
+              <div class="col-span-2">FEITO</div>
+            </div>
+
+            @for (set of ex.sets; track set.setNumber) {
+              <div
+                [class.bg-emerald-950/30]="set.completed"
+                [class.border-emerald-500/40]="set.completed"
+                class="grid grid-cols-12 items-center gap-2 bg-slate-950 border border-slate-800 rounded-xl p-2 transition"
+              >
+                <div class="col-span-2 text-center font-mono font-bold text-slate-400">
+                  {{ set.setNumber }}
+                </div>
+
+                <div class="col-span-4">
+                  <input
+                    type="number"
+                    [(ngModel)]="set.weight"
+                    step="0.5"
+                    min="0"
+                    class="w-full bg-slate-900 border border-slate-700 rounded-lg py-1.5 text-center font-bold text-slate-100 focus:border-emerald-500 focus:outline-none"
+                  />
+                </div>
+
+                <div class="col-span-4">
+                  <input
+                    type="number"
+                    [(ngModel)]="set.reps"
+                    min="0"
+                    class="w-full bg-slate-900 border border-slate-700 rounded-lg py-1.5 text-center font-bold text-slate-100 focus:border-emerald-500 focus:outline-none"
+                  />
+                </div>
+
+                <div class="col-span-2 flex justify-center">
+                  <button
+                    type="button"
+                    (click)="toggleSetCompleted(ex, set)"
+                    [class.bg-emerald-500]="set.completed"
+                    [class.text-slate-950]="set.completed"
+                    [class.bg-slate-800]="!set.completed"
+                    [class.text-slate-400]="!set.completed"
+                    class="w-9 h-9 rounded-lg font-bold flex items-center justify-center transition"
+                  >
+                    ✓
+                  </button>
+                </div>
+              </div>
+            }
+          </div>
+
+          <button
+            type="button"
+            (click)="addExtraSet(ex)"
+            class="mt-3 w-full py-1.5 text-xs font-medium text-slate-400 hover:text-emerald-400 border border-dashed border-slate-800 hover:border-emerald-500/40 rounded-lg transition"
+          >
+            + Adicionar série extra
+          </button>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Barra Flutuante do Cronômetro de Descanso -->
+  @if (restRemaining() > 0) {
+    <div class="fixed bottom-4 left-1/2 -translate-x-1/2 w-[92%] max-w-md bg-slate-900 border border-emerald-500/50 rounded-2xl p-4 shadow-2xl flex items-center justify-between z-50">
+      <div>
+        <span class="text-xs text-emerald-400 font-semibold uppercase block">Descanso</span>
+        <span class="text-2xl font-mono font-black text-white">{{ formatSeconds(restRemaining()) }}</span>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button
+          (click)="adjustRestTimer(-15)"
+          class="bg-slate-800 hover:bg-slate-700 text-xs font-bold px-3 py-2 rounded-lg"
+        >
+          -15s
+        </button>
+        <button
+          (click)="adjustRestTimer(15)"
+          class="bg-slate-800 hover:bg-slate-700 text-xs font-bold px-3 py-2 rounded-lg"
+        >
+          +15s
+        </button>
+        <button
+          (click)="clearRestTimer()"
+          class="bg-rose-500/20 text-rose-400 hover:bg-rose-500/30 text-xs font-bold px-3 py-2 rounded-lg"
+        >
+          Pular
+        </button>
+      </div>
+    </div>
+  }
+</div>
