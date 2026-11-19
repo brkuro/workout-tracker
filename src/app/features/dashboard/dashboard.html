@@ -1,1 +1,232 @@
-<p>dashboard works!</p>
+<div class="max-w-6xl mx-auto p-4 md:p-6 space-y-6">
+
+  <!-- Cabeçalho e Cards de Resumo Semanal -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div>
+      <h2 class="text-2xl font-bold text-slate-100">Evolução & Volume</h2>
+      <p class="text-sm text-slate-400">Semana atual: <span class="font-mono text-emerald-400">{{ currentWeek() }}</span></p>
+    </div>
+
+    <a
+      routerLink="/treinar"
+      class="inline-flex items-center justify-center bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-5 py-2.5 rounded-xl text-sm transition shadow-lg shadow-emerald-500/10"
+    >
+      + Novo Treino
+    </a>
+  </div>
+
+  <!-- KPIs Rápidos -->
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5">
+      <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Treinos na Semana</span>
+      <p class="text-3xl font-black text-white mt-1">{{ weeklySummary().workoutsCount }}</p>
+    </div>
+
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5">
+      <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Séries Válidas (Semana)</span>
+      <p class="text-3xl font-black text-emerald-400 mt-1">{{ weeklySummary().totalSets }}</p>
+    </div>
+
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5">
+      <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Tonelagem Semanal</span>
+      <p class="text-3xl font-black text-amber-400 mt-1">
+        {{ weeklySummary().totalTonnage | number:'1.0-0' }} <span class="text-base font-normal text-slate-400">kg</span>
+      </p>
+    </div>
+  </div>
+
+  <!-- GRID PRINCIPAL: Gráfico de Força (7 cols) + Volume Muscular (5 cols) -->
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+    <!-- GRÁFICO DE EVOLUÇÃO DE FORÇA (1RM ESTIMADA) -->
+    <div class="lg:col-span-7 bg-slate-900 border border-slate-800 rounded-2xl p-6 flex flex-col justify-between">
+      <div>
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+          <div>
+            <h3 class="text-lg font-bold text-slate-100">Progressão de Força (1RM Estimada)</h3>
+            <p class="text-xs text-slate-400">Cálculo via Fórmula de Epley baseado na melhor série do dia</p>
+          </div>
+
+          <select
+            [ngModel]="selectedExerciseId()"
+            (ngModelChange)="selectedExerciseId.set($event); hoveredPoint.set(null)"
+            class="bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100 focus:border-emerald-500 focus:outline-none"
+          >
+            @for (ex of state.exercises(); track ex.id) {
+              <option [value]="ex.id">{{ ex.name }}</option>
+            }
+          </select>
+        </div>
+
+        <!-- Box de Destaque do Ponto Selecionado / Recorde -->
+        @if (chartData().points.length > 0) {
+          <div class="flex items-center justify-between bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-3 mb-4 text-sm">
+            @if (hoveredPoint(); as pt) {
+              <div>
+                <span class="text-slate-400">Sessão de <strong class="text-white">{{ pt.date }}</strong>:</span>
+                <span class="ml-2 text-emerald-400 font-bold">1RM Est. {{ pt.estimated1RM }} kg</span>
+              </div>
+              <span class="font-mono text-xs bg-slate-800 text-amber-300 px-2.5 py-1 rounded-md">
+                Melhor série: {{ pt.bestSetLabel }}
+              </span>
+            } @else {
+              <div>
+                <span class="text-slate-400">Recorde 1RM Estimado:</span>
+                <span class="ml-2 text-emerald-400 font-bold">{{ chartData().max1RM }} kg</span>
+              </div>
+              <span class="text-xs text-slate-500">Passe o mouse ou toque nos pontos</span>
+            }
+          </div>
+
+          <!-- Gráfico SVG Responsivo -->
+          <div class="w-full overflow-hidden">
+            <svg viewBox="0 0 600 210" class="w-full h-56 overflow-visible">
+              <defs>
+                <linearGradient id="strengthGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#10b981" stop-opacity="0.35" />
+                  <stop offset="100%" stop-color="#10b981" stop-opacity="0.0" />
+                </linearGradient>
+              </defs>
+
+              <!-- Linhas de grade horizontais -->
+              <line x1="30" y1="30" x2="570" y2="30" stroke="#1e293b" stroke-dasharray="4" />
+              <line x1="30" y1="105" x2="570" y2="105" stroke="#1e293b" stroke-dasharray="4" />
+              <line x1="30" y1="180" x2="570" y2="180" stroke="#1e293b" stroke-dasharray="4" />
+
+              <!-- Área preenchida sob a curva -->
+              @if (chartData().points.length > 1) {
+                <path [attr.d]="chartData().areaPath" fill="url(#strengthGradient)" />
+                <polyline
+                  fill="none"
+                  stroke="#10b981"
+                  stroke-width="3"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  [attr.points]="chartData().polyline"
+                />
+              }
+
+              <!-- Pontos interativos -->
+              @for (pt of chartData().points; track $index) {
+                <g
+                  class="cursor-pointer group"
+                  (mouseenter)="hoveredPoint.set(pt)"
+                  (click)="hoveredPoint.set(pt)"
+                >
+                  <!-- Rótulo de valor acima do ponto -->
+                  <text
+                    [attr.x]="pt.x"
+                    [attr.y]="pt.y - 12"
+                    text-anchor="middle"
+                    class="fill-slate-300 text-[11px] font-mono font-bold"
+                  >
+                    {{ pt.estimated1RM }}kg
+                  </text>
+
+                  <!-- Círculo do ponto -->
+                  <circle
+                    [attr.cx]="pt.x"
+                    [attr.cy]="pt.y"
+                    r="6"
+                    class="fill-slate-950 stroke-emerald-400 stroke-[3] transition-all group-hover:r-8"
+                  />
+
+                  <!-- Data no eixo X -->
+                  <text
+                    [attr.x]="pt.x"
+                    y="202"
+                    text-anchor="middle"
+                    class="fill-slate-500 text-[11px] font-mono"
+                  >
+                    {{ pt.date }}
+                  </text>
+                </g>
+              }
+            </svg>
+          </div>
+        } @else {
+          <div class="h-56 flex flex-col items-center justify-center border border-dashed border-slate-800 rounded-xl text-center p-6">
+            <p class="text-slate-400 text-sm">Ainda não há registros concluídos para este exercício.</p>
+            <p class="text-xs text-slate-500 mt-1">Finalize um treino contendo este exercício para gerar a curva de progressão.</p>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- VOLUME SEMANAL POR GRUPO MUSCULAR -->
+    <div class="lg:col-span-5 bg-slate-900 border border-slate-800 rounded-2xl p-6">
+      <div class="mb-5">
+        <h3 class="text-lg font-bold text-slate-100">Volume Semanal por Músculo</h3>
+        <p class="text-xs text-slate-400">Meta de referência: 10 a 20 séries válidas / semana</p>
+      </div>
+
+      <div class="space-y-4">
+        @for (item of weeklyVolume(); track item.muscleGroup) {
+          <div>
+            <div class="flex items-center justify-between text-sm mb-1.5">
+              <span class="font-medium text-slate-200">{{ item.muscleGroup }}</span>
+              <div class="text-xs font-mono">
+                <span
+                  [class.text-emerald-400]="item.validSets >= 10"
+                  [class.text-slate-300]="item.validSets > 0 && item.validSets < 10"
+                  [class.text-slate-600]="item.validSets === 0"
+                  class="font-bold"
+                >
+                  {{ item.validSets }} séries
+                </span>
+                @if (item.totalTonnage > 0) {
+                  <span class="text-slate-500 ml-1.5">({{ item.totalTonnage | number:'1.0-0' }}kg)</span>
+                }
+              </div>
+            </div>
+
+            <!-- Barra de Progresso -->
+            <div class="w-full h-2.5 bg-slate-950 rounded-full overflow-hidden border border-slate-800/80">
+              <div
+                class="h-full rounded-full transition-all duration-500"
+                [class.bg-emerald-500]="item.validSets >= 10"
+                [class.bg-amber-400]="item.validSets > 0 && item.validSets < 10"
+                [style.width.%]="getVolumePercentage(item.validSets)"
+              ></div>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- HISTÓRICO DE SESSÕES FINALIZADAS -->
+  <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+    <h3 class="text-lg font-bold text-slate-100 mb-4">Histórico de Treinos ({{ state.logs().length }})</h3>
+
+    <div class="space-y-3">
+      @for (log of state.logs(); track log.id) {
+        <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div>
+            <div class="flex items-center gap-2">
+              <h4 class="font-bold text-slate-100">{{ log.workoutName }}</h4>
+              <span class="text-xs font-mono bg-slate-900 text-slate-400 px-2 py-0.5 rounded border border-slate-800">
+                {{ log.weekIdentifier }}
+              </span>
+            </div>
+            <p class="text-xs text-slate-400 mt-1">
+              {{ log.date | date:'dd/MM/yyyy \'às\' HH:mm' }} • Duração: {{ log.durationMinutes }} min • {{ log.exercises.length }} exercícios
+            </p>
+          </div>
+
+          <div class="flex flex-wrap gap-1.5">
+            @for (ex of log.exercises; track ex.exerciseId) {
+              <span class="text-xs bg-slate-900 text-slate-300 px-2.5 py-1 rounded-lg border border-slate-800">
+                {{ ex.name }}
+              </span>
+            }
+          </div>
+        </div>
+      } @empty {
+        <p class="text-sm text-slate-500 text-center py-6">
+          Nenhum treino finalizado ainda. Vá até a aba "Treinar" para registrar sua primeira sessão!
+        </p>
+      }
+    </div>
+  </div>
+</div>
