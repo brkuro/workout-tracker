@@ -35,6 +35,18 @@ Aplicação web desenvolvida em **Angular** e **Tailwind CSS** para planejamento
 - **Estilização:** Tailwind CSS (UI responsiva *mobile-first* em tema escuro)
 - **Persistência:** LocalStorage (camada de serviço desacoplada pronta para integração com Firebase Firestore / MongoDB)
 
+## 🗺️ Roadmap do Projeto
+
+- [x] Setup inicial com Angular 21 (Zoneless), Tailwind CSS v4 e modelagem de dados
+- [x] Gerenciamento de estado reativo com Angular Signals
+- [x] Construtor de fichas de treino e catálogo de exercícios customizável
+- [x] Tela de treino ativo com memória automática de carga e cronômetro de descanso
+- [x] Dashboard analítico com cálculo de volume semanal (ISO Week) e curva de 1RM (Fórmula de Epley)
+- [x] Integração com Firebase Firestore SDK para persistência e sincronização em tempo real
+- [ ] Autenticação com Google (Firebase Auth) e isolamento de dados por usuário
+- [ ] Navegação entre semanas passadas e detalhamento de sessões no histórico
+- [ ] Deploy em produção no Firebase Hosting (PWA mobile-first)
+
 ### Estrutura de Pastas
 
 ```text
@@ -49,15 +61,3 @@ src/app/
     └── dashboard/       # Visualização de volume semanal e gráficos de evolução
 
 ---
-
-## 🗺️ Roadmap do Projeto
-
-- [x] Setup inicial com Angular 21 (Zoneless), Tailwind CSS v4 e modelagem de dados
-- [x] Gerenciamento de estado reativo com Angular Signals
-- [x] Construtor de fichas de treino e catálogo de exercícios customizável
-- [x] Tela de treino ativo com memória automática de carga e cronômetro de descanso
-- [x] Dashboard analítico com cálculo de volume semanal (ISO Week) e curva de 1RM (Fórmula de Epley)
-- [x] Integração com Firebase Firestore SDK para persistência e sincronização em tempo real
-- [ ] Autenticação com Google (Firebase Auth) e isolamento de dados por usuário
-- [ ] Navegação entre semanas passadas e detalhamento de sessões no histórico
-- [ ] Deploy em produção no Firebase Hosting (PWA mobile-first)
