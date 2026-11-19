@@ -70,17 +70,17 @@ export class WorkoutBuilderComponent {
     this.plannedExercises.update(list => list.filter((_, i) => i !== index));
   }
 
-  createCustomExercise(): void {
+  async createCustomExercise(): Promise<void> {
     const name = this.newExerciseName().trim();
     if (!name) return;
 
-    const created = this.state.addCustomExercise(name, this.newExerciseMuscle());
+    const created = await this.state.addCustomExercise(name, this.newExerciseMuscle());
     this.selectedExerciseId.set(created.id);
     this.newExerciseName.set('');
     this.showNewExerciseForm.set(false);
   }
 
-  saveWorkout(): void {
+  async saveWorkout(): Promise<void> {
     const name = this.workoutName().trim();
     if (!name || this.plannedExercises().length === 0) return;
 
@@ -92,7 +92,7 @@ export class WorkoutBuilderComponent {
       createdAt: new Date().toISOString()
     };
 
-    this.state.saveTemplate(template);
+    await this.state.saveTemplate(template);
     this.resetForm();
   }
 
