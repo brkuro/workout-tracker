@@ -1,59 +1,49 @@
-# WorkoutTracker
+# 🏋️‍♂️ IRONLOG — Sistema de Gestão de Treinos e Progressão de Carga
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.2.30.
+Aplicação web desenvolvida em **Angular** e **Tailwind CSS** para planejamento de fichas de treino, registro rápido de cargas durante a sessão e análise quantitativa de hipertrofia e evolução de força ao longo das semanas.
 
-## Development server
+---
 
-To start a local development server, run:
+## 🎯 Funcionalidades Principais
 
-```bash
-ng serve
-```
+- **Construtor de Fichas (Workout Builder):** Criação, edição e organização de rotinas de treino (`Treino A`, `Treino B`, etc.) com filtro por grupo muscular, definição de séries, faixa de repetições alvo, tempo de descanso e cadastro de exercícios personalizados.
+- **Modo Treino Ativo (Active Session):**
+  - **Memória de Carga Automática:** Pré-preenche o peso e as repetições de cada exercício com base no último treino registrado, exibindo a melhor marca anterior como referência para progressão de carga.
+  - **Cronômetro de Descanso Integrado:** Dispara automaticamente ao concluir uma série, com controles rápidos (`-15s`, `+15s`, `Pular`).
+- **Dashboard Analítico & Progressão (Em desenvolvimento):**
+  - Contabilização de **volume semanal (séries válidas e tonelagem)** agrupado por grupo muscular utilizando identificador ISO de semana (`YYYY-Www`).
+  - Curva de **evolução de força (1RM Estimada)** por exercício ao longo das sessões.
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+---
 
-## Code scaffolding
+## 🧮 Regras de Negócio e Fórmulas Implementadas
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+1. **Estimativa de 1RM (Fórmula de Epley):**
+   $$\text{1RM Estimada} = \text{Carga} \times \left(1 + \frac{\text{Repetições}}{30}\right)$$
+   Permite acompanhar o ganho real de força mesmo quando a progressão ocorre pelo aumento de repetições mantendo a mesma carga.
 
-```bash
-ng generate component component-name
-```
+2. **Volume Semanal por Grupo Muscular:**
+   Agrupa as sessões pelo padrão ISO Week (`2026-W47`, por exemplo) e contabiliza:
+   - **Séries Válidas:** Total de séries efetivamente concluídas por grupo muscular na semana.
+   - **Tonelagem Total:** $\sum (\text{Séries} \times \text{Repetições} \times \text{Carga})$.
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+---
 
-```bash
-ng generate --help
-```
+## 🛠️ Stack Tecnológica e Arquitetura
 
-## Building
+- **Front-end:** Angular (Standalone Components & Signals para gerenciamento de estado reativo)
+- **Estilização:** Tailwind CSS (UI responsiva *mobile-first* em tema escuro)
+- **Persistência:** LocalStorage (camada de serviço desacoplada pronta para integração com Firebase Firestore / MongoDB)
 
-To build the project run:
+### Estrutura de Pastas
 
-```bash
-ng build
-```
-
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
-
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+```text
+src/app/
+├── core/
+│   ├── data/            # Catálogo inicial de exercícios (seed)
+│   ├── models/          # Interfaces TypeScript (WorkoutTemplate, WorkoutLog, ExecutedSet)
+│   └── services/        # WorkoutStateService (Signals) e WorkoutAnalyticsService
+└── features/
+    ├── workout-builder/ # Montagem e gerenciamento de fichas de treino
+    ├── active-session/  # Execução de treino em tempo real + timer de descanso
+    └── dashboard/       # Visualização de volume semanal e gráficos de evolução
