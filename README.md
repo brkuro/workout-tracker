@@ -43,7 +43,7 @@ Aplicação web desenvolvida em **Angular** e **Tailwind CSS** para planejamento
 - [x] Tela de treino ativo com memória automática de carga e cronômetro de descanso
 - [x] Dashboard analítico com cálculo de volume semanal (ISO Week) e curva de 1RM (Fórmula de Epley)
 - [x] Integração com Firebase Firestore SDK para persistência e sincronização em tempo real
-- [ ] Autenticação com Google (Firebase Auth) e isolamento de dados por usuário
+- [x] Autenticação com Google (Firebase Auth) e isolamento de dados por usuário
 - [ ] Navegação entre semanas passadas e detalhamento de sessões no histórico
 - [ ] Deploy em produção no Firebase Hosting (PWA mobile-first)
 
