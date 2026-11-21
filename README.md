@@ -1,39 +1,109 @@
-# 🏋️‍♂️ IRONLOG — Sistema de Gestão de Treinos e Progressão de Carga
+# 🏋️ IRONLOG — Sistema de Gestão de Treinos e Progressão de Carga
 
-Aplicação web desenvolvida em **Angular** e **Tailwind CSS** para planejamento de fichas de treino, registro rápido de cargas durante a sessão e análise quantitativa de hipertrofia e evolução de força ao longo das semanas.
+[![Deploy](https://img.shields.io/badge/Live%20Demo-ironlog--tracker.web.app-10b981?style=for-the-badge&logo=firebase&logoColor=white)](https://ironlog-tracker.web.app)
+[![Angular](https://img.shields.io/badge/Angular-21%20(Zoneless)-dd0031?style=for-the-badge&logo=angular&logoColor=white)](https://angular.dev)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-v4-38bdf8?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
+[![Firebase](https://img.shields.io/badge/Firebase-Auth%20%7C%20Firestore%20%7C%20Hosting-ffca28?style=for-the-badge&logo=firebase&logoColor=black)](https://firebase.google.com)
 
----
+Aplicação web full-stack desenvolvida para planejamento de fichas de musculação, execução de treinos em tempo real e acompanhamento analítico de progressão de carga e volume semanal.
 
-## 🎯 Funcionalidades Principais
-
-- **Construtor de Fichas (Workout Builder):** Criação, edição e organização de rotinas de treino (`Treino A`, `Treino B`, etc.) com filtro por grupo muscular, definição de séries, faixa de repetições alvo, tempo de descanso e cadastro de exercícios personalizados.
-- **Modo Treino Ativo (Active Session):**
-  - **Memória de Carga Automática:** Pré-preenche o peso e as repetições de cada exercício com base no último treino registrado, exibindo a melhor marca anterior como referência para progressão de carga.
-  - **Cronômetro de Descanso Integrado:** Dispara automaticamente ao concluir uma série, com controles rápidos (`-15s`, `+15s`, `Pular`).
-- **Dashboard Analítico & Progressão (Em desenvolvimento):**
-  - Contabilização de **volume semanal (séries válidas e tonelagem)** agrupado por grupo muscular utilizando identificador ISO de semana (`YYYY-Www`).
-  - Curva de **evolução de força (1RM Estimada)** por exercício ao longo das sessões.
+🔗 **Acesse a aplicação em produção:** [https://ironlog-tracker.web.app](https://ironlog-tracker.web.app)
 
 ---
 
-## 🧮 Regras de Negócio e Fórmulas Implementadas
+## ✨ Funcionalidades Principais
 
-1. **Estimativa de 1RM (Fórmula de Epley):**
-   $$\text{1RM Estimada} = \text{Carga} \times \left(1 + \frac{\text{Repetições}}{30}\right)$$
-   Permite acompanhar o ganho real de força mesmo quando a progressão ocorre pelo aumento de repetições mantendo a mesma carga.
-
-2. **Volume Semanal por Grupo Muscular:**
-   Agrupa as sessões pelo padrão ISO Week (`2026-W47`, por exemplo) e contabiliza:
-   - **Séries Válidas:** Total de séries efetivamente concluídas por grupo muscular na semana.
-   - **Tonelagem Total:** $\sum (\text{Séries} \times \text{Repetições} \times \text{Carga})$.
+- **Autenticação e Isolamento Multi-usuário:** Login seguro via conta Google (`Firebase Auth`), com partição estrita de coleções no banco (`users/{uid}/...`) protegidas por regras de segurança no Firestore.
+- **Construtor de Fichas e Catálogo Customizável:** Criação, edição e exclusão de fichas de treino (`WorkoutTemplates`), além de cadastro dinâmico de novos exercícios organizados por grupo muscular.
+- **Execução de Treino Ativo (UX Mobile-First):**
+  - **Memória Automática de Carga:** Consulta o histórico do usuário para preencher automaticamente os pesos e repetições da última sessão realizada daquele exercício.
+  - **Cronômetro de Descanso Integrado:** Temporizador regressivo configurado por exercício para controle de intervalos entre séries.
+- **Dashboard Analítico de Performance:**
+  - **Agregação de Volume Semanal:** Cálculo de séries válidas e tonelagem levantada por grupo muscular utilizando identificador padronizado **ISO Week** (`YYYY-Www`).
+  - **Estimativa de Força Máxima (1RM):** Projeção da evolução de carga máxima por exercício através da **Fórmula de Epley**:
+    $$\text{1RM} = \text{Peso} \times \left(1 + \frac{\text{Repetições}}{30}\right)$$
 
 ---
 
 ## 🛠️ Stack Tecnológica e Arquitetura
 
-- **Front-end:** Angular (Standalone Components & Signals para gerenciamento de estado reativo)
-- **Estilização:** Tailwind CSS (UI responsiva *mobile-first* em tema escuro)
-- **Persistência:** LocalStorage (camada de serviço desacoplada pronta para integração com Firebase Firestore / MongoDB)
+- **Frontend:** Angular 21 (Standalone Components, arquitetura **Zoneless** e gerenciamento de estado reativo baseado em **Angular Signals**).
+- **Estilização:** Tailwind CSS v4 configurado via PostCSS com tema escuro (*Slate/Emerald*) otimizado para uso em dispositivos móveis.
+- **Backend as a Service (Firebase):**
+  - **Cloud Firestore:** Persistência NoSQL e sincronização em tempo real via listeners nativos (`onSnapshot`).
+  - **Firebase Authentication:** Autenticação OAuth 2.0 com provedor Google.
+  - **Firebase Hosting:** Hospedagem SPA com rewrite configurado para rotas do Angular Router.
+
+---
+
+## 📁 Estrutura de Diretórios
+
+```text
+src/
+├── app/
+│   ├── core/
+│   │   ├── data/          # Seed inicial do catálogo de exercícios
+│   │   ├── models/        # Interfaces e tipagens estritas (TypeScript)
+│   │   ├── services/      # AuthService e WorkoutStateService (Signals + Firestore)
+│   │   └── firebase.client.ts
+│   └── features/
+│       ├── workout-builder/  # Criação e gerenciamento de fichas de treino
+│       ├── active-session/   # Execução de treino, registro de séries e timer
+│       └── dashboard/        # Métricas de volume semanal, 1RM e histórico
+└── environments/
+    └── environment.example.ts
+```
+
+---
+
+## 🚀 Como Executar Localmente
+
+### Pré-requisitos
+- Node.js (v20+) e npm
+- Conta e projeto configurados no [Firebase Console](https://console.firebase.google.com/) (com Authentication Google e Firestore Database ativados)
+
+### Passo a passo
+
+1. **Clone o repositório:**
+   ```bash
+   git clone https://github.com/brkuro/capacitacao-asimov--brayan_cosme-.git
+   cd workout-tracker
+   ```
+
+2. **Instale as dependências:**
+   ```bash
+   npm install
+   ```
+
+3. **Configure as variáveis do Firebase:**
+   Copie o arquivo de exemplo e preencha com as credenciais do seu projeto Firebase:
+   ```bash
+   cp src/environments/environment.example.ts src/environments/environment.ts
+   ```
+
+4. **Inicie o servidor de desenvolvimento:**
+   ```bash
+   ng serve --open
+   ```
+
+---
+
+## 🔒 Regras de Segurança do Firestore
+
+Para garantir o isolamento de dados entre usuários em produção, o banco utiliza a seguinte regra de acesso:
+
+```javascript
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{userId}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}
+```
+
+---
 
 ## 🗺️ Roadmap do Projeto
 
@@ -44,20 +114,10 @@ Aplicação web desenvolvida em **Angular** e **Tailwind CSS** para planejamento
 - [x] Dashboard analítico com cálculo de volume semanal (ISO Week) e curva de 1RM (Fórmula de Epley)
 - [x] Integração com Firebase Firestore SDK para persistência e sincronização em tempo real
 - [x] Autenticação com Google (Firebase Auth) e isolamento de dados por usuário
-- [ ] Navegação entre semanas passadas e detalhamento de sessões no histórico
-- [ ] Deploy em produção no Firebase Hosting (PWA mobile-first)
-
-### Estrutura de Pastas
-
-```text
-src/app/
-├── core/
-│   ├── data/            # Catálogo inicial de exercícios (seed)
-│   ├── models/          # Interfaces TypeScript (WorkoutTemplate, WorkoutLog, ExecutedSet)
-│   └── services/        # WorkoutStateService (Signals) e WorkoutAnalyticsService
-└── features/
-    ├── workout-builder/ # Montagem e gerenciamento de fichas de treino
-    ├── active-session/  # Execução de treino em tempo real + timer de descanso
-    └── dashboard/       # Visualização de volume semanal e gráficos de evolução
+- [x] Deploy em produção no Firebase Hosting (`ironlog-tracker.web.app`)
+- [ ] Navegação entre semanas passadas e detalhamento de sessões no histórico (v1.1)
+- [ ] Alerta sonoro/vibração ao zerar cronômetro e edição de logs finalizados (v1.1)
 
 ---
+
+Desenvolvido por **Brayan Justiniano de Oliveira Cosme** — Estudante de Ciência da Computação (UNIFEI) | [GitHub](https://github.com/brkuro)
