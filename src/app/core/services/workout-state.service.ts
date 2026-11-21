@@ -1,4 +1,4 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, signal, inject, effect } from '@angular/core';
 import {
   collection,
   doc,
@@ -6,9 +6,11 @@ import {
   deleteDoc,
   query,
   orderBy,
-  onSnapshot
+  onSnapshot,
+  Unsubscribe
 } from 'firebase/firestore';
 import { db } from '../firebase.client';
+import { AuthService } from './auth.service';
 import {
   Exercise,
   WorkoutTemplate,
@@ -21,18 +23,39 @@ import { INITIAL_EXERCISES } from '../data/exercises.seed';
   providedIn: 'root'
 })
 export class WorkoutStateService {
+  private authService = inject(AuthService);
+
   readonly exercises = signal<Exercise[]>(INITIAL_EXERCISES);
   readonly templates = signal<WorkoutTemplate[]>([]);
   readonly logs = signal<WorkoutLog[]>([]);
 
+  private unsubscribers: Unsubscribe[] = [];
+
   constructor() {
-    this.listenToFirestore();
+    // Reage automaticamente quando o usuário faz login ou logout
+    effect(() => {
+      const user = this.authService.currentUser();
+      this.clearListeners();
+
+      if (user) {
+        this.listenToUserFirestore(user.uid);
+      } else {
+        this.exercises.set(INITIAL_EXERCISES);
+        this.templates.set([]);
+        this.logs.set([]);
+      }
+    });
   }
 
-  private listenToFirestore(): void {
-    // 1. Escuta exercícios customizados
-    onSnapshot(
-      collection(db, 'exercises'),
+  private clearListeners(): void {
+    this.unsubscribers.forEach(unsub => unsub());
+    this.unsubscribers = [];
+  }
+
+  private listenToUserFirestore(uid: string): void {
+    // 1. Exercícios customizados do usuário
+    const unsubEx = onSnapshot(
+      collection(db, `users/${uid}/exercises`),
       snapshot => {
         const merged = [...INITIAL_EXERCISES];
         snapshot.forEach(docSnap => {
@@ -46,9 +69,9 @@ export class WorkoutStateService {
       err => console.error('Erro ao ler exercises:', err)
     );
 
-    // 2. Escuta fichas de treino
-    onSnapshot(
-      collection(db, 'templates'),
+    // 2. Fichas de treino do usuário
+    const unsubTpl = onSnapshot(
+      collection(db, `users/${uid}/templates`),
       snapshot => {
         const list = snapshot.docs.map(docSnap => ({
           id: docSnap.id,
@@ -59,9 +82,9 @@ export class WorkoutStateService {
       err => console.error('Erro ao ler templates:', err)
     );
 
-    // 3. Escuta histórico de treinos
-    const logsQuery = query(collection(db, 'logs'), orderBy('date', 'desc'));
-    onSnapshot(
+    // 3. Histórico de treinos do usuário
+    const logsQuery = query(collection(db, `users/${uid}/logs`), orderBy('date', 'desc'));
+    const unsubLogs = onSnapshot(
       logsQuery,
       snapshot => {
         const list = snapshot.docs.map(docSnap => ({
@@ -72,19 +95,27 @@ export class WorkoutStateService {
       },
       err => console.error('Erro ao ler logs:', err)
     );
+
+    this.unsubscribers.push(unsubEx, unsubTpl, unsubLogs);
   }
 
   async addCustomExercise(name: string, muscleGroup: Exercise['muscleGroup']): Promise<Exercise> {
+    const uid = this.authService.currentUser()?.uid;
+    if (!uid) throw new Error('Usuário não autenticado');
+
     const newExercise: Exercise = {
       id: this.generateSlug(name),
       name: name.trim(),
       muscleGroup
     };
-    await setDoc(doc(db, 'exercises', newExercise.id), newExercise);
+    await setDoc(doc(db, `users/${uid}/exercises`, newExercise.id), newExercise);
     return newExercise;
   }
 
   async saveTemplate(template: WorkoutTemplate): Promise<void> {
+    const uid = this.authService.currentUser()?.uid;
+    if (!uid) return;
+
     const cleanTemplate: WorkoutTemplate = {
       id: template.id,
       name: template.name,
@@ -102,19 +133,24 @@ export class WorkoutStateService {
     };
 
     try {
-      await setDoc(doc(db, 'templates', template.id), cleanTemplate);
+      await setDoc(doc(db, `users/${uid}/templates`, template.id), cleanTemplate);
     } catch (error) {
       console.error('Falha ao salvar ficha no Firestore:', error);
     }
   }
 
   async deleteTemplate(templateId: string): Promise<void> {
-    await deleteDoc(doc(db, 'templates', templateId));
+    const uid = this.authService.currentUser()?.uid;
+    if (!uid) return;
+    await deleteDoc(doc(db, `users/${uid}/templates`, templateId));
   }
 
   async addWorkoutLog(log: WorkoutLog): Promise<void> {
+    const uid = this.authService.currentUser()?.uid;
+    if (!uid) return;
+
     try {
-      await setDoc(doc(db, 'logs', log.id), log);
+      await setDoc(doc(db, `users/${uid}/logs`, log.id), log);
     } catch (error) {
       console.error('Falha ao salvar treino no Firestore:', error);
     }
